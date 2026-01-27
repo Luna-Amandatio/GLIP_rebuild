@@ -1,0 +1,80 @@
+X,Y
+airplane,mAP结果：86.09851
+apple,mAP结果：29.67413
+backpack,mAP结果：42.78080
+banana,mAP结果：16.62842
+baseball bat,mAP结果：63.80318
+baseball glove,mAP结果：46.99231
+bear,mAP结果：94.05941
+bed,mAP结果：60.18095
+bench,mAP结果：50.86280
+bicycle,mAP结果：54.77458
+bird,mAP结果：39.78466
+boat,mAP结果：43.82981
+book,mAP结果：18.27333
+bottle,mAP结果：48.34595
+bowl,mAP结果：61.71067
+broccoli,mAP结果：19.06136
+bus,mAP结果：75.15345
+cake,mAP结果：66.81802
+car,mAP结果：30.06177
+carrot,mAP结果：8.40547
+cat,mAP结果：97.22638
+cell phone,mAP结果：70.13828
+chair,mAP结果：13.67578
+clock,mAP结果：80.86648
+couch,mAP结果：68.46052
+cow,mAP结果：84.81571
+cup,mAP结果：56.04043
+dining table,mAP结果：37.43314
+dog,mAP结果：94.67425
+donut,mAP结果：18.07882
+elephant,mAP结果：74.91908
+fire hydrant,mAP结果：81.90099
+fork,mAP结果：59.46911
+frisbee,mAP结果：81.69024
+giraffe,mAP结果：87.78319
+hair drier,mAP结果：66.33663
+handbag,mAP结果：35.00451
+horse,mAP结果：80.39601
+hot dog,mAP结果：29.80417
+keyboard,mAP结果：74.87902
+kite,mAP结果：49.62803
+knife,mAP结果：30.74825
+laptop,mAP结果：80.17118
+microwave,mAP结果：100.00000
+motorcycle,mAP结果：70.36499
+mouse,mAP结果：89.29119
+orange,mAP结果：25.24536
+parking meter,mAP结果：19.27298
+person,mAP结果：7.14126
+pizza,mAP结果：63.95349
+potted plant,mAP结果：70.19612
+refrigerator,mAP结果：91.85829
+remote,mAP结果：47.86991
+sandwich,mAP结果：59.14701
+scissors,mAP结果：54.69547
+sheep,mAP结果：63.10245
+sink,mAP结果：52.10339
+skateboard,mAP结果：80.65278
+skis,mAP结果：48.17328
+snowboard,mAP结果：63.47635
+spoon,mAP结果：32.20633
+sports ball,mAP结果：38.23832
+stop sign,mAP结果：87.12871
+suitcase,mAP结果：62.93811
+surfboard,mAP结果：70.79554
+teddy bear,mAP结果：67.00456
+tennis racket,mAP结果：84.02418
+tie,mAP结果：58.94292
+toaster,mAP结果：100.00000
+toilet,mAP结果：88.04351
+toothbrush,mAP结果：52.39641
+traffic light,mAP结果：54.02726
+train,mAP结果：87.22967
+truck,mAP结果：61.97429
+tv,mAP结果：86.45848
+umbrella,mAP结果：57.50586
+vase,mAP结果：56.26023
+wine glass,mAP结果：40.75145
+zebra,mAP结果：87.39976

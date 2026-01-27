@@ -1,0 +1,80 @@
+apple , mAP结果：0.00000
+airplane , mAP结果：43.52948
+apple , mAP结果：0.00000
+backpack , mAP结果：0.09168
+banana , mAP结果：1.88863
+baseball bat , mAP结果：14.44768
+baseball glove , mAP结果：27.60974
+bear , mAP结果：19.24346
+bed , mAP结果：34.12326
+bench , mAP结果：3.63087
+bicycle , mAP结果：5.02121
+bird , mAP结果：4.18457
+boat , mAP结果：2.52378
+book , mAP结果：0.11317
+bottle , mAP结果：0.19008
+bowl , mAP结果：2.59641
+broccoli , mAP结果：3.18310
+bus , mAP结果：39.28627
+cake , mAP结果：11.04141
+car , mAP结果：0.74257
+carrot , mAP结果：0.35114
+cat , mAP结果：25.21637
+cell phone , mAP结果：30.08962
+chair , mAP结果：0.29770
+clock , mAP结果：5.84151
+couch , mAP结果：11.39777
+cow , mAP结果：32.46619
+cup , mAP结果：0.69693
+dining table , mAP结果：45.36597
+dog , mAP结果：19.44133
+donut , mAP结果：3.50618
+elephant , mAP结果：7.01940
+fire hydrant , mAP结果：59.02775
+fork , mAP结果：0.05941
+frisbee , mAP结果：23.25050
+giraffe , mAP结果：33.31667
+hair drier , mAP结果：8.41584
+handbag , mAP结果：0.34011
+horse , mAP结果：18.96672
+hot dog , mAP结果：16.92294
+keyboard , mAP结果：2.16553
+kite , mAP结果：2.24747
+knife , mAP结果：3.89203
+laptop , mAP结果：2.68596
+microwave , mAP结果：6.15820
+motorcycle , mAP结果：21.19602
+mouse , mAP结果：1.57191
+orange , mAP结果：1.33755
+parking meter , mAP结果：31.80022
+person , mAP结果：6.57136
+pizza , mAP结果：34.80387
+potted plant , mAP结果：39.09912
+refrigerator , mAP结果：8.67621
+remote , mAP结果：0.48300
+sandwich , mAP结果：17.73733
+scissors , mAP结果：10.39604
+sheep , mAP结果：2.05636
+sink , mAP结果：0.30208
+skateboard , mAP结果：1.25100
+skis , mAP结果：0.42290
+snowboard , mAP结果：4.53554
+spoon , mAP结果：0.02738
+sports ball , mAP结果：4.09178
+stop sign , mAP结果：63.33833
+suitcase , mAP结果：2.82696
+surfboard , mAP结果：0.75039
+teddy bear , mAP结果：22.93434
+tennis racket , mAP结果：24.66724
+tie , mAP结果：0.01500
+toaster , mAP结果：100.00000
+toilet , mAP结果：1.76204
+toothbrush , mAP结果：5.76058
+traffic light , mAP结果：0.45380
+train , mAP结果：18.32779
+truck , mAP结果：7.14543
+tv , mAP结果：10.04085
+umbrella , mAP结果：7.45608
+vase , mAP结果：0.38318
+wine glass , mAP结果：0.89161
+zebra , mAP结果：53.79081
