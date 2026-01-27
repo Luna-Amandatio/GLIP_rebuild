@@ -18,7 +18,8 @@ from maskrcnn_benchmark.utils.fuse_helper import FeatureResizer, func_attention,
     BiAttentionBlock, AttentionT2I, BiAttentionBlockForCheckpoint, BertLMPredictionHead
 from transformers.models.bert.modeling_bert import BertConfig, BertAttention, BertIntermediate, BertOutput, \
     BertPreTrainedModel
-from transformers.modeling_utils import apply_chunking_to_forward
+
+from transformers.pytorch_utils import apply_chunking_to_forward
 import torch.utils.checkpoint as checkpoint
 import pdb
 

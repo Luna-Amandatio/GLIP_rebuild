@@ -279,3 +279,145 @@ C10_CUDA_CHECK(cudaGetLastError());
 ## 对.py文件
 
 * 使用IDE搜索功能，将**np.float**改为**np.float32**
+
+* 对maskrcnn_benchmark\utils\imports.py(复制新文件后替换)
+```python
+#原本的旧文件
+import torch
+
+if torch._six.PY37:
+    import importlib
+    import importlib.util
+    import sys
+
+
+    # from https://stackoverflow.com/questions/67631/how-to-import-a-module-given-the-full-path?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+    def import_file(module_name, file_path, make_importable=False):
+        spec = importlib.util.spec_from_file_location(module_name, file_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        if make_importable:
+            sys.modules[module_name] = module
+        return module
+else:
+    import imp
+
+    def import_file(module_name, file_path, make_importable=None):
+        module = imp.load_source(module_name, file_path)
+        return module
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------
+
+#修改后文件
+import torch
+import sys
+import importlib.util
+
+def import_file(module_name, file_path, make_importable=False):
+    """Import a python file given its path. 兼容所有Python版本"""
+    spec = importlib.util.spec_from_file_location(module_name, file_path)
+    if spec is None:
+        raise ImportError(f"Cannot import {module_name} from {file_path}")
+    
+    module = importlib.util.module_from_spec(spec)
+    if make_importable:
+        sys.modules[module_name] = module
+    
+    spec.loader.exec_module(module)
+    return module
+```
+
+
+* maskrcnn_benchmark\modeling\rpn\vldyhead.py
+```python
+#原本第21行
+from transformers.modeling_utils import apply_chunking_to_forward
+
+#修改后第21行
+from transformers.pytorch_utils import apply_chunking_to_forward
+```
+
+* maskrcnn_benchmark/modeling/rpn/modeling_bert.py
+
+```python
+#原本第31行
+from transformers.modeling_utils import find_pruneable_heads_and_indices, prune_linear_layer
+
+#修改后第31行
+from transformers.pytorch_utils import find_pruneable_heads_and_indices, prune_linear_layer
+```
+
+* maskrcnn_benchmark\utils\model_zoo.py(复制新文件后替换)
+```python
+#原本的旧文件
+import os
+import sys
+
+try:
+    from torch.hub import _download_url_to_file
+    from torch.hub import urlparse
+    from torch.hub import HASH_REGEX
+except ImportError:
+    from torch.utils.model_zoo import _download_url_to_file
+    from torch.utils.model_zoo import urlparse
+    from torch.utils.model_zoo import HASH_REGEX
+
+from maskrcnn_benchmark.utils.comm import is_main_process
+from maskrcnn_benchmark.utils.comm import synchronize
+def cache_url(url, model_dir='model', progress=True):
+    if model_dir is None:
+        torch_home = os.path.expanduser(os.getenv("TORCH_HOME", "~/.torch"))
+        model_dir = os.getenv("TORCH_MODEL_ZOO", os.path.join(torch_home, "models"))
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir, exist_ok=True)
+    parts = urlparse(url)
+    filename = os.path.basename(parts.path)
+    if filename == "model_final.pkl":
+        filename = parts.path.replace("/", "_")
+    cached_file = os.path.join(model_dir, filename)
+    if not os.path.exists(cached_file):
+        sys.stderr.write('Downloading: "{}" to {}\n'.format(url, cached_file))
+        hash_prefix = HASH_REGEX.search(filename)
+        if hash_prefix is not None:
+            hash_prefix = hash_prefix.group(1)
+            if len(hash_prefix) < 6:
+                hash_prefix = None
+        _download_url_to_file(url, cached_file, hash_prefix, progress=progress)
+    synchronize()
+    return cached_file
+
+#----------------------------------------------------------------------------------------------
+
+#修改后新文件
+import os
+import sys
+import urllib.request
+import hashlib
+from urllib.parse import urlparse
+from maskrcnn_benchmark.utils.comm import is_main_process, synchronize
+
+def _download_url_to_file(url, file_name, hash_prefix=None, progress=True):
+    """新版PyTorch兼容下载函数"""
+    urllib.request.urlretrieve(url, file_name)
+
+def cache_url(url, model_dir='model', progress=True):
+    """Loads the Torch serialized object at the given URL."""
+    if model_dir is None:
+        torch_home = os.path.expanduser(os.getenv("TORCH_HOME", "~/.torch"))
+        model_dir = os.getenv("TORCH_MODEL_ZOO", os.path.join(torch_home, "models"))
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir, exist_ok=True)
+    
+    parts = urlparse(url)
+    filename = os.path.basename(parts.path)
+    if filename == "model_final.pkl":
+        filename = parts.path.replace("/", "_")
+    
+    cached_file = os.path.join(model_dir, filename)
+    if not os.path.exists(cached_file):
+        sys.stderr.write('Downloading: "{}" to {}\n'.format(url, cached_file))
+        _download_url_to_file(url, cached_file, progress=progress)
+    
+    synchronize()
+    return cached_file
+```

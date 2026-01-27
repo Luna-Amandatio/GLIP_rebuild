@@ -28,7 +28,8 @@ from torch import nn
 from torch.nn import BCEWithLogitsLoss, CrossEntropyLoss, MSELoss
 from transformers.activations import ACT2FN
 import pdb
-from transformers.modeling_utils import find_pruneable_heads_and_indices, prune_linear_layer
+from transformers.pytorch_utils import find_pruneable_heads_and_indices, prune_linear_layer
+
 
 
 def clamp_values(vector, min_val = -50000, max_val = 50000):
