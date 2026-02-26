@@ -1,8 +1,9 @@
-import sys
-import os
-
-
-# 补丁
+'''
+比较模型在各置信度下mAP变化
+'''
+#-------------------------------
+#保证本地环境的中文分词器得以加载，避免联网检查
+#-------------------------------
 import nltk
 def no_download(*args, **kwargs):
     """禁用所有下载尝试"""
@@ -12,18 +13,20 @@ nltk.data.url = lambda x: None  # 禁用URL访问
 # 强制本地路径
 nltk.data.path = [r'C:\Users\LQY1\AppData\Roaming\nltk_data']
 
+import os
 os.environ['TRANSFORMERS_OFFLINE'] = '1'
 os.environ['HF_DATASETS_OFFLINE'] = '1'
 os.environ['HF_HUB_OFFLINE'] = '1'
 os.environ['NLTK_QUIET'] = 'True'
 
-
 import warnings
 warnings.filterwarnings("ignore")
 
-from PIL import Image
 import numpy as np
 import json
+import torch
+
+from PIL import Image
 from maskrcnn_benchmark.config import cfg
 from maskrcnn_benchmark.engine.predictor_glip import GLIPDemo
 from pycocotools.coco import COCO
@@ -41,8 +44,8 @@ json_path = base_path + "/valid/_annotations.coco.json"
 images_path = base_path + "/valid/"
 
 # GLIP配置
-cfg_file = r"D:\Project\ComSen\GLIP\configs\pretrain\glip_Swin_T_O365_GoldG.yaml"
-weight_file = r"D:\Project\ComSen\GLIP\MODEL\glip_tiny_model_o365_goldg_cc_sbu.pth"
+cfg_file = r"..\..\configs\pretrain\glip_Swin_T_O365_GoldG.yaml"
+weight_file = r"..\..\MODEL\glip_tiny_model_o365_goldg_cc_sbu.pth"
 
 cfg.local_rank = 0
 cfg.num_gpus = 1
@@ -77,8 +80,10 @@ def run_success_guaranteed_map(confidence):
 
         print(f"[{i + 1}/{len(img_infos)}] {img_info['file_name']})")
 
-        preds = glip_demo.compute_prediction(image, caption)
-        top_preds = glip_demo._post_process(preds, threshold=0.3)
+        # 半精度推理
+        with torch.cuda.amp.autocast(dtype=torch.float16):
+            preds = glip_demo.compute_prediction(image, caption)
+            top_preds = glip_demo._post_process(preds, threshold=confidence)
 
         labels = top_preds.get_field("labels").tolist()
         scores = top_preds.get_field("scores").tolist()

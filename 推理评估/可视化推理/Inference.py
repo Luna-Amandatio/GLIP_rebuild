@@ -1,7 +1,12 @@
+'''
+可视化各提示词推理结果
+'''
 import warnings
 warnings.filterwarnings("ignore")
 
-# 补丁
+#-------------------------------
+#保证本地环境的中文分词器得以加载，避免联网检查
+#-------------------------------
 import os
 import nltk
 def no_download(*args, **kwargs):
@@ -16,17 +21,18 @@ os.environ['TRANSFORMERS_OFFLINE'] = '1'
 os.environ['HF_DATASETS_OFFLINE'] = '1'
 os.environ['HF_HUB_OFFLINE'] = '1'
 os.environ['NLTK_QUIET'] = 'True'
-from transformers import logging
 
-logging.set_verbosity_error()
-# pylab.rcParams['figure.figsize'] = 20, 12
-from maskrcnn_benchmark.config import cfg
-from maskrcnn_benchmark.engine.predictor_glip import GLIPDemo
 
 import cv2
 import numpy as np
 import torch
+
+from maskrcnn_benchmark.config import cfg
+from maskrcnn_benchmark.engine.predictor_glip import GLIPDemo
 from PIL import Image, ImageDraw, ImageFont
+from transformers import logging
+logging.set_verbosity_error()
+
 
 IMAGE_LIST = ['./example/bear.jpg','./example/bird.jpg']
 classes =  ['bear','bird']
@@ -85,8 +91,8 @@ def draw_images(image, boxes, classes, scores, colors, xyxy=True):
     return image
 
 
-config_file = r"D:\Project\ComSen\GLIP\configs\pretrain\glip_Swin_T_O365_GoldG.yaml"
-weight_file = r'D:\Project\ComSen\GLIP\MODEL\glip_tiny_model_o365_goldg_cc_sbu.pth'
+config_file = r"..\..\configs\pretrain\glip_Swin_T_O365_GoldG.yaml"
+weight_file = r'..\..\MODEL\glip_tiny_model_o365_goldg_cc_sbu.pth'
 
 cfg.local_rank = 0
 cfg.num_gpus = 1
@@ -120,13 +126,15 @@ def glip_inference(image_, caption_):
     colors = [colors_(idx) for idx in labels]
 
     IDX = []
+    labels_names = []
     for i, label in enumerate(labels):
         phrase_idx = int(label) - 1
         if 0 <= phrase_idx < len(phrases):  # 确保索引有效
-            IDX.append(i)
+            IDX.append(phrase_idx)
     # 获得标签数字对应的类别名
     scores = [scores[i] for i in IDX]
-    labels_names = [labels[int(label)] for label in IDX]
+    for i in IDX:
+        labels_names.append(phrases[i])
     boxes =  boxes[IDX]
 
     return boxes, scores, labels_names, colors
@@ -142,7 +150,6 @@ if __name__ == '__main__':
             f"a {cls}",
             f"{cls} object",
             f"image containing {cls}"
-
         ])
 
     for idx ,prompt in enumerate (prompts):

@@ -16,7 +16,7 @@ from maskrcnn_benchmark.structures.bounding_box import BoxList
 from maskrcnn_benchmark import layers as L
 from maskrcnn_benchmark.modeling.roi_heads.mask_head.inference import Masker
 from maskrcnn_benchmark.utils import cv2_util
-
+from contextlib import nullcontext
 engine = inflect.engine()
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
@@ -31,14 +31,22 @@ class GLIPDemo(object):
                  min_image_size=None,
                  show_mask_heatmaps=False,
                  masks_per_dim=5,
-                 load_model=True
+                 load_model=True,
+                 use_fp16 = False
                  ):
         self.cfg = cfg.clone()
+        self.use_fp16 = use_fp16
+
         if load_model:
             self.model = build_detection_model(cfg)
             self.model.eval()
             self.device = torch.device(cfg.MODEL.DEVICE)
             self.model.to(self.device)
+
+        if self.use_fp16 and torch.cuda.is_available():
+            self.model = self.model.half()
+            print("FP16推理已启用")
+
         self.min_image_size = min_image_size
         self.show_mask_heatmaps = show_mask_heatmaps
         self.masks_per_dim = masks_per_dim
@@ -179,6 +187,9 @@ class GLIPDemo(object):
         image = self.transforms(original_image)
         image_list = to_image_list(image, self.cfg.DATALOADER.SIZE_DIVISIBILITY)
         image_list = image_list.to(self.device)
+
+        if self.use_fp16:
+            image_list.tensors = image_list.tensors.half()
         # caption
         if isinstance(original_caption, list):
             # we directly provided a list of category names
