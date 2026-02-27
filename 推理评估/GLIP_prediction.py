@@ -20,8 +20,8 @@ warnings.filterwarnings("ignore")
 import numpy as np
 import json
 import torch
+import cv2
 
-from PIL import Image
 from maskrcnn_benchmark.config import cfg
 from maskrcnn_benchmark.engine.predictor_glip import GLIPDemo
 from pycocotools.coco import COCO
@@ -164,8 +164,11 @@ class GLIPInference:
         print(f"类别名称到ID映射: {self.category_map}")
 
         for i, img_info in enumerate(pbar):
-            img_path = self.images_dir + img_info['file_name']
-            image = np.array(Image.open(img_path).convert('RGB'))
+            try:
+                img_path = self.images_dir + img_info['file_name']
+                image = cv2.cvtColor(cv2.imread(img_path), cv2.COLOR_BGR2RGB)
+            except:
+                continue
 
             print(f"[{i + 1}/{length}] {img_info['file_name']})")
 
@@ -209,6 +212,7 @@ class GLIPInference:
 
         eval_cat_ids = list(self.category_map.values())
         cocoEval.params.catIds = eval_cat_ids
+        cocoEval.params.imgIds = [img_info["id"] for img_info in self.img_infos]  # 只评估有标注的图片
 
         cocoEval.evaluate()
         cocoEval.accumulate()
@@ -280,5 +284,9 @@ def clean():
 #测试
 #-------------------------
 if __name__ == "__main__":
-    glip = GLIPInference("bird",0.3)
+
+    glip = GLIPInference(["bird","person"],0.3)
     glip.model_inference()
+    glip.mAP_Calculation()
+
+    #clean()
