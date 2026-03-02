@@ -1,0 +1,1 @@
+from .GLIP_prediction import GLIPInference
