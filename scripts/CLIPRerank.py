@@ -83,6 +83,7 @@ class CLIPRerank:
         num : 推理的图片数量
         alpha : 融合分数比例
         iou_threshold : <UNK>
+        clip_threshold : CLIP模型保留的检测框最低置信度
         #batch : 同时推理批次
         glip : glip模型
         clip : clip模型
@@ -107,6 +108,7 @@ class CLIPRerank:
                  caption,
                  confidence = 0.5,
                  iou_threshold=0.5,
+                 clip_threshold=0.3,
                  alpha = 0.5,
                  dataset = 'Coco.v1i.coco-segmentation_2',
                  input_num = 100,
@@ -123,8 +125,9 @@ class CLIPRerank:
         print(f"输入的置信度为{confidence}")
 
         self.confidence = confidence
-        self.num = input_num
+        self.clip_threshold = clip_threshold
         self.iou_threshold = iou_threshold
+        self.num = input_num
         self.alpha = alpha
         if isinstance(caption, str):
             self.caption = [caption]
@@ -167,6 +170,7 @@ class CLIPRerank:
                 self.warmup_model(glip_demo)
 
         return glip_demo
+
 
     def clip_load(self):
 
@@ -228,8 +232,8 @@ class CLIPRerank:
             if class_name in self.category_map:
                 label_to_catid[i + 1] = self.category_map[class_name]
 
-        print(f"标签映射关系: {label_to_catid}")
-        print(f"类别名称到ID映射: {self.category_map}")
+        #print(f"标签映射关系: {label_to_catid}")
+        #print(f"类别名称到ID映射: {self.category_map}")
 
         for i, img_info in enumerate(pbar):
             need_timer = self.enable_timer and i < 10
@@ -249,51 +253,60 @@ class CLIPRerank:
                         preds = self.glip.compute_prediction(image, self.caption)
                         top_preds = self.glip._post_process(preds, threshold=self.confidence)
 
+            #GLIP结果提取
             labels = top_preds.get_field("labels").tolist()
             glip_scores = top_preds.get_field("scores").tolist()
             boxes = top_preds.bbox.detach().cpu().numpy()
 
+            #图片裁剪
             cropped_images = []
             for box in boxes:
                 x1,y1,x2,y2 = box
                 cropped = image[int(y1):int(y2), int(x1):int(x2)]
                 cropped_images.append(cropped)
 
-            inputs = self.processor(text=self.caption, images=cropped_images, return_tensors="pt", padding=True)
-            inputs = {k: v.to(self.device) for k, v in inputs.items()}  # 移到GPU
-            with torch.no_grad():
-                outputs = self.clip(**inputs)
-                probs = outputs.logits_per_image.softmax(dim=1)
+            #CLIP批量推理
+            with Timer("clip模型推理", enable=need_timer):
+                inputs = self.processor(text=self.caption, images=cropped_images, return_tensors="pt", padding=True)
+                inputs = {k: v.to(self.device) for k, v in inputs.items()}  # 移到GPU
+                with torch.no_grad():
+                    outputs = self.clip(**inputs)
+                    probs = outputs.logits_per_image.softmax(dim=1)
 
-                # 获取每个框的最佳类别索引和对应的分数
-                best_clip_scores, best_indices = probs.max(dim=1)
-                best_clip_scores = best_clip_scores.tolist()
+                    # 获取每个框的最佳类别索引和对应的分数
+                    best_clip_scores, best_indices = probs.max(dim=1)
+                    best_clip_scores = best_clip_scores.tolist()
 
-                # 重要：best_indices 是类别索引（0到79），对应 self.caption 中的位置
-                best_indices = best_indices.tolist()
+                    #best_indices 是类别索引（0到79），对应 self.caption 中的位置
+                    best_indices = best_indices.tolist()
 
-                # 获取对应的类别名称
-                best_class_names = [self.caption[idx] for idx in best_indices]
+                    # 获取对应的类别名称
+                    best_class_names = [self.caption[idx] for idx in best_indices]
 
-            # 融合分数
-            fused_scores = []
-            for glip_score, clip_score in zip(glip_scores, best_clip_scores):
-                fused_score = glip_score * self.alpha + clip_score * (1 - self.alpha)
-                fused_scores.append(fused_score)
 
             # 保存预测结果
-            for box, score, class_name in zip(boxes, fused_scores, best_class_names):
+            filtered_count = 0
+            for box, class_name, clip_score ,glip_score in zip(boxes, best_class_names, best_clip_scores, glip_scores):
+
+                if clip_score < self.clip_threshold:
+                    #filtered_count += 1
+                    continue
+
+                # 分数融合
+                fused_score = glip_score * self.alpha + clip_score * (1 - self.alpha)
+
                 cat_id = self.category_map.get(class_name)
                 pred = {
                     "image_id": img_info['id'],
                     "category_id": cat_id,
                     "bbox": [float(box[0]), float(box[1]), float(box[2] - box[0]), float(box[3] - box[1])],
-                    "score": float(score)
+                    "score": float(fused_score)
                 }
                 temp_predictions.append(pred)
 
             if len(labels) > 0:
                 print(f"检测到 {len(labels)} 个目标")
+                #print(f"以去除的预测框个数{filtered_count}个")
 
             else:
                 print(f"未检测到目标")
