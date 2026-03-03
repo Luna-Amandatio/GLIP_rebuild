@@ -31,7 +31,8 @@
 ./编译安装.bat
 ```
 
-
+GLIP模型权重地址 ： https://huggingface.co/GLIPModel/GLIP/blob/main/glip_tiny_model_o365_goldg_cc_sbu.pth
+COCO数据集下载位置 ：https://app.roboflow.com/ds/qHK8Q42lc8?key=27IHm68o5o
 
 ---
 
@@ -122,5 +123,6 @@
 1. 对GroundDINO模型进行了pytorch2.0编译，使模型提速
 
 2. 将GroundDINO模型推理使用半精度推理优化
+
 
    
