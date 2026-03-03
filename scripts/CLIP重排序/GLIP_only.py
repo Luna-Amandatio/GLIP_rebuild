@@ -10,7 +10,6 @@ print(f"切换到目录: {os.getcwd()}")
 # 将当前目录（scripts）添加到系统路径
 sys.path.insert(0, os.getcwd())
 
-import numpy as np
 from scripts.GLIP_prediction import GLIPInference
 
 
@@ -45,7 +44,7 @@ if __name__ == '__main__':
                         iou_threshold=0.8,
                         confidence=0.3,
                         input_num=500,
-                        output_file=f"GroundDINO单模型在多类别输入mAP-未启用nms",
+                        output_file=f"GLIP单模型在多类别输入mAP-未启用nms",
                         enable_timer=False,
                         nms=False,
                     )

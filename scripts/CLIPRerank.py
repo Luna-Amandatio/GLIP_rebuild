@@ -289,7 +289,7 @@ class CLIPRerank:
             for box, class_name, clip_score ,glip_score in zip(boxes, best_class_names, best_clip_scores, glip_scores):
 
                 if clip_score < self.clip_threshold:
-                    #filtered_count += 1
+                    filtered_count += 1
                     continue
 
                 # 分数融合
@@ -306,7 +306,7 @@ class CLIPRerank:
 
             if len(labels) > 0:
                 print(f"检测到 {len(labels)} 个目标")
-                #print(f"以去除的预测框个数{filtered_count}个")
+                print(f"以去除的预测框个数{filtered_count}个")
 
             else:
                 print(f"未检测到目标")

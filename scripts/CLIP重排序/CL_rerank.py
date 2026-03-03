@@ -27,6 +27,7 @@ List = ['airplane', 'apple', 'backpack', 'banana', 'baseball bat', 'baseball glo
 if __name__ == '__main__':
         rerank_clip = CLIPRerank(caption=List,
                                 alpha=0.2,
+                                clip_threshold=0.3,
                                 iou_threshold=-1,
                                 confidence=0.25,
                                 input_num=500,

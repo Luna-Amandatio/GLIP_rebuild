@@ -1,15 +1,17 @@
 '''
-多提示词推理结果
+多提示词推理结果 - 仅GLIP版本
 '''
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
-#-------------------------------
-#保证本地环境的中文分词器得以加载，避免联网检查
-#-------------------------------
+# -------------------------------
+# 保证本地环境的中文分词器得以加载，避免联网检查
+# -------------------------------
 import os
 import nltk
+
 
 def no_download(*args, **kwargs):
     """禁用所有下载尝试"""
@@ -26,7 +28,6 @@ os.environ['HF_DATASETS_OFFLINE'] = '1'
 os.environ['HF_HUB_OFFLINE'] = '1'
 os.environ['NLTK_QUIET'] = 'True'
 
-
 import cv2
 import numpy as np
 import torch
@@ -35,24 +36,11 @@ from maskrcnn_benchmark.config import cfg
 from maskrcnn_benchmark.engine.predictor_glip import GLIPDemo
 from PIL import Image, ImageDraw, ImageFont
 from transformers import logging
+
 logging.set_verbosity_error()
+from torchvision.ops import nms
 
 IMAGE_path = './example/tennis.jpg'
-'''
-'tennis',
-    'a man.a racket.a tennis',
-    'a photo of a man.a photo of a racket.a photo of a tennis',
-    'a black man.white and black racket.white tennis',
-    'a black man.white and black racket.spherical white tennis'
-
-    '
-'''
-prompts = [
-    'a tennis',
-    'a photo of a tennis',
-    'white tennis',
-    'spherical white tennis'
-]
 
 
 class Colors:
@@ -109,66 +97,182 @@ def draw_images(image, boxes, classes, scores, colors, xyxy=True):
     return image
 
 
-config_file = r"..\..\configs\pretrain\glip_Swin_T_O365_GoldG.yaml"
-weight_file = r'..\..\MODEL\glip_tiny_model_o365_goldg_cc_sbu.pth'
+class GLIPOnly:
+    """
+    仅使用GLIP进行推理的简化版本
+    """
 
-cfg.local_rank = 0
-cfg.num_gpus = 1
-cfg.merge_from_file(config_file)
-cfg.merge_from_list(["MODEL.WEIGHT", weight_file])
-cfg.merge_from_list(["MODEL.DEVICE", "cuda"])
+    def __init__(self,
+                 caption,
+                 image_path,
+                 confidence=0.1,
+                 iou_threshold=0.5,
+                 nms=False):
 
-glip_demo = GLIPDemo(
-    cfg,
-    min_image_size=800,
-    confidence_threshold=0.3,
-    show_mask_heatmaps=False
-)
+        self.nms = nms
+        self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.confidence = confidence
+        self.iou_threshold = iou_threshold
 
+        # 处理caption
+        if isinstance(caption, str):
+            self.caption = caption.split('.')
+            self.caption = [phrase.strip() for phrase in self.caption if phrase.strip()]
+        else:
+            self.caption = caption
 
-def glip_inference(image_, caption_):
-    # 为不同类别设置颜色, 从caption提取的类别不同
-    colors_ = Colors()
+        # 加载GLIP模型
+        self.glip = self.glip_load()
+        self.image_path = image_path
 
-    preds = glip_demo.compute_prediction(image_, caption_)
-    top_preds = glip_demo._post_process(preds, threshold=0.4)
+        self.labels = []
+        self.scores = []
+        self.boxes = []
+        self.color = None
 
-    # 从预测结果中提取预测类别,得分和检测框
-    labels = top_preds.get_field("labels").tolist()
-    scores = top_preds.get_field("scores").tolist()
-    boxes = top_preds.bbox.detach().cpu().numpy()
+    def glip_load(self):
+        """加载GLIP模型"""
+        cfg_file = r"..\..\configs\pretrain\glip_Swin_T_O365_GoldG.yaml"
+        weight_file = r"..\..\MODEL\glip_tiny_model_o365_goldg_cc_sbu.pth"
 
-    # 映射回文字
-    phrases = caption_.split('.')
-    phrases = [phrase.strip() for phrase in phrases if phrase.strip()]
-    # 为每个预测类别设置框颜色
-    colors = [colors_(idx) for idx in labels]
+        cfg.local_rank = 0
+        cfg.num_gpus = 1
+        cfg.merge_from_file(cfg_file)
+        cfg.merge_from_list(["MODEL.WEIGHT", weight_file])
+        cfg.merge_from_list(["MODEL.DEVICE", self.device])
 
-    IDX = []
-    labels_names = []
-    for i, label in enumerate(labels):
-        phrase_idx = int(label) - 1
-        if 0 <= phrase_idx < len(phrases):  # 确保索引有效
-            IDX.append(phrase_idx)
-    # 获得标签数字对应的类别名
-    scores = [scores[i] for i in IDX]
-    for i in IDX:
-        labels_names.append(phrases[i])
+        glip_demo = GLIPDemo(cfg, min_image_size=800, confidence_threshold=self.confidence)
+        glip_demo.model.eval()
 
-    boxes = boxes[IDX]
+        return glip_demo
 
-    return boxes, scores, labels_names, colors
+    def model_inference(self):
+        """仅GLIP模型推理"""
+        image = cv2.cvtColor(cv2.imread(self.image_path), cv2.COLOR_BGR2RGB)
+
+        if image is None:
+            print(f"错误：无法加载图片 {self.image_path}")
+            return
+
+        # GLIP推理
+        with torch.no_grad():
+            # 将caption列表转换为GLIP需要的格式（用.连接）
+
+            preds = self.glip.compute_prediction(image,self.caption)
+            top_preds = self.glip._post_process(preds, threshold=self.confidence)
+
+            if len(top_preds) == 0:
+                print("未检测到任何目标")
+                return
+
+            # GLIP结果提取
+            labels = top_preds.get_field("labels").tolist()
+            glip_scores = top_preds.get_field("scores").tolist()
+            boxes = top_preds.bbox.detach().cpu().numpy()
+
+            print(f"原始检测到 {len(labels)} 个目标")
+            print(f"原始labels: {labels}")
+            print(f"原始scores: {[f'{s:.3f}' for s in glip_scores]}")
+
+            # 将labels映射回类别名称（GLIP的labels从1开始）
+            temp_predictions = []
+            for i, (label, score, box) in enumerate(zip(labels, glip_scores, boxes)):
+                phrase_idx = int(label) - 1  # 转换为0开始的索引
+                if 0 <= phrase_idx < len(self.caption):
+                    class_name = self.caption[phrase_idx]
+
+                    self.labels.append(class_name)
+                    self.scores.append(score)
+                    self.boxes.append(box)
+
+                    # 为NMS准备数据
+                    x1, y1, x2, y2 = box
+                    temp_predictions.append({
+                        'bbox': [x1, y1, x2 - x1, y2 - y1],
+                        'score': score,
+                        'class_name': class_name
+                    })
+
+                    print(f"  框{i}: {class_name}, 分数={score:.3f}")
+
+            print(f"有效检测结果: {len(self.labels)} 个目标")
+
+        # NMS后处理
+        if self.nms and temp_predictions:
+            print(f"\nNMS处理前有 {len(temp_predictions)} 个框")
+            nms_results = self.apply_nms(temp_predictions)
+            print(f"NMS处理后剩 {len(nms_results)} 个框")
+
+            # 更新结果为NMS后的
+            self.boxes = []
+            self.scores = []
+            self.labels = []
+            for result in nms_results:
+                x1, y1, w, h = result['bbox']
+                self.boxes.append([x1, y1, x1 + w, y1 + h])
+                self.scores.append(result['score'])
+                self.labels.append(result['class_name'])
+
+        # 生成颜色
+        self.color = self.color_chose()
+
+    def apply_nms(self, predictions, conf_threshold=0.05):
+        """应用NMS"""
+        if not predictions:
+            return []
+
+        boxes = []
+        scores = []
+        for pred in predictions:
+            x1, y1, w, h = pred['bbox']
+            boxes.append([x1, y1, x1 + w, y1 + h])
+            scores.append(pred['score'])
+
+        boxes = torch.tensor(boxes, dtype=torch.float32)
+        scores = torch.tensor(scores, dtype=torch.float32)
+
+        keep_indices = nms(boxes, scores, self.iou_threshold)
+        valid_keep = keep_indices[scores[keep_indices] > conf_threshold]
+
+        return [predictions[i.item()] for i in valid_keep]
+
+    def color_chose(self):
+        colors_ = Colors()
+        return [colors_(i) for i in range(len(self.labels))]
 
 
 if __name__ == '__main__':
-    # caption = 'bobble heads on top of the shelf'
-    # caption = "Striped bed, white sofa, TV, carpet, person"
-    # caption = "table on carpet"
-    for caption in prompts:
-        image = cv2.imread(IMAGE_path)
-        boxes, scores, labels_names, colors = glip_inference(image, caption)
-        print(labels_names, scores)
-        print(boxes)
-        image = draw_images(image=image, boxes=boxes, classes=labels_names, scores=scores, colors=colors)
-        image.save(f'./{caption}.jpg')
+    IMAGE_path = './example/tennis.jpg'
 
+
+    caption = 'a black man.a white racket.spherical white tennis.a black woman.a baseball.a dog.a cat.a car.a bicycle'
+
+
+    # 创建GLIP推理实例
+    glip_only = GLIPOnly(
+        caption=caption,
+        image_path=IMAGE_path,
+        confidence=0.1,  # GLIP置信度阈值
+        iou_threshold=0.1,  # NMS的IoU阈值
+        nms=True  # 是否使用NMS
+    )
+
+    # 执行推理
+    glip_only.model_inference()
+
+    # 显示结果
+    if len(glip_only.boxes) > 0:
+        image = cv2.imread(IMAGE_path)
+        image = draw_images(
+            image=image,
+            boxes=glip_only.boxes,
+            classes=glip_only.labels,
+            scores=glip_only.scores,
+            colors=glip_only.color
+        )
+
+        # 保存结果
+        image.save("未进行CLIP重排结果.jpg")
+        image.show()
+    else:
+        print("没有检测到任何目标")
