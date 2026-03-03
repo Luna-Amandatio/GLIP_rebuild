@@ -12,12 +12,12 @@
 
 ### 项目结构
 
-├─assert          ----示例图片资源
-├─DATASET    ----数据集存放目录
-├─logs             ----profile生成的结果
-├─models       ----模型存放位置
-├─scripts         ----辅助脚本
-└─结果保存     ----可视化生成图片
+├─assert          ----示例图片资源    
+├─DATASET    ----数据集存放目录    
+├─logs             ----profile生成的结果    
+├─models       ----模型存放位置    
+├─scripts         ----辅助脚本   
+└─结果保存     ----可视化生成图片   
 
 
 
@@ -126,3 +126,4 @@ COCO数据集下载位置 ：https://app.roboflow.com/ds/qHK8Q42lc8?key=27IHm68o
 
 
    
+
