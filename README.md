@@ -2,7 +2,7 @@
 
 ### 项目结果
 
-![本地图片](.\assert\GLIP使用模版句与类别提示mAP差异.png "本地图片示例")
+![本地图片](assert\GLIP使用模版句与类别提示mAP差异.png "本地图片示例")
 
 
 
@@ -75,11 +75,11 @@ COCO数据集下载位置 ：https://app.roboflow.com/ds/qHK8Q42lc8?key=27IHm68o
 
 **未进行CLIP重排结果**
 
-![本地图片](./assert/未进行CLIP重排结果.jpg "本地图片示例")
+![本地图片](assert/未进行CLIP重排结果.jpg "本地图片示例")
 
 **进行CLIP重排结果**
 
-![本地图片](./assert/进行CLIP重排结果.jpg "本地图片示例")
+![本地图片](assert/进行CLIP重排结果.jpg "本地图片示例")
 
 
 
@@ -106,11 +106,11 @@ COCO数据集下载位置 ：https://app.roboflow.com/ds/qHK8Q42lc8?key=27IHm68o
 
 **未进行NMS去重**
 
-![本地图片](./assert/nms未开启结果1.jpg "本地图片示例")
+![本地图片](assert/nms未开启结果1.jpg "本地图片示例")
 
 进行NMS去重
 
-![本地图片](./assert/nms开启后结果1.jpg "本地图片示例")
+![本地图片](assert/nms开启后结果1.jpg "本地图片示例")
 
 
 
